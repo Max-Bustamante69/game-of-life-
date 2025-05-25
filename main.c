@@ -2,19 +2,24 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
-#include <windows.h>
+
+#undef main
+
+
+
+
 
 
 //Constantes para el renderizado de la grilla
 #define WINDOW_WIDTH 800
 #define WINDOW_HEIGHT 600
 #define CELL_SIZE 10
-#define GRID_WIDTH (WINDOW_WIDTH / CELL_SIZE)
-#define GRID_HEIGHT (WINDOW_HEIGHT / CELL_SIZE)
+#define GRID_ROWS (WINDOW_HEIGHT / CELL_SIZE)
+#define GRID_COLS (WINDOW_WIDTH / CELL_SIZE)
 
 // Estado de la grilla
-bool grid[GRID_WIDTH][GRID_HEIGHT] = {0};
-bool next_grid[GRID_WIDTH][GRID_HEIGHT] = {0};
+bool grid[GRID_ROWS][GRID_COLS] = {0};
+bool next_grid[GRID_ROWS][GRID_COLS] = {0};
 bool running = true;
 bool simulation_running = false;
 
@@ -26,8 +31,8 @@ int count_neighbors(int x, int y) {
             if (i == 0 && j == 0) continue;
             
             //Se añade el modulo para que la grilla sea circular y se cree un efecto de mundo infinito
-            int nx = (x + i + GRID_WIDTH) % GRID_WIDTH;
-            int ny = (y + j + GRID_HEIGHT) % GRID_HEIGHT;
+            int nx = (x + i + GRID_ROWS) % GRID_ROWS;
+            int ny = (y + j + GRID_COLS) % GRID_COLS;
             
             if (grid[nx][ny]) count++;
         }
@@ -37,8 +42,8 @@ int count_neighbors(int x, int y) {
 
 // Función para actualizar la grilla según las reglas de Conway
 void update_grid() {
-    for (int x = 0; x < GRID_WIDTH; x++) {
-        for (int y = 0; y < GRID_HEIGHT; y++) {
+    for (int x = 0; x < GRID_ROWS; x++) {
+        for (int y = 0; y < GRID_COLS; y++) {
             int neighbors = count_neighbors(x, y);
             bool cell = grid[x][y];
             
@@ -59,8 +64,8 @@ void update_grid() {
     }
     
     // Copiar next_grid a grid
-    for (int x = 0; x < GRID_WIDTH; x++) {
-        for (int y = 0; y < GRID_HEIGHT; y++) {
+    for (int x = 0; x < GRID_ROWS; x++) {
+        for (int y = 0; y < GRID_COLS; y++) {
             grid[x][y] = next_grid[x][y];
         }
     }
@@ -68,15 +73,20 @@ void update_grid() {
 
 // Función para limpiar la grilla
 void clear_grid() {
-    for (int x = 0; x < GRID_WIDTH; x++) {
-        for (int y = 0; y < GRID_HEIGHT; y++) {
+    for (int x = 0; x < GRID_ROWS; x++) {
+        for (int y = 0; y < GRID_COLS; y++) {
             grid[x][y] = false;
         }
     }
 }
 
 
+
 int main(int argc, char* argv[]) {
+
+    // Mark parameters as used to fix warnings
+    (void)argc;
+    (void)argv;
 
     // Inicializar SDL
     if (SDL_Init(SDL_INIT_VIDEO) < 0) {
@@ -89,8 +99,8 @@ int main(int argc, char* argv[]) {
         "Conway's Game of Life",
          SDL_WINDOWPOS_CENTERED,
          SDL_WINDOWPOS_CENTERED,
-        WINDOW_WIDTH,
-        WINDOW_HEIGHT,
+         WINDOW_WIDTH,
+         WINDOW_HEIGHT,
         SDL_WINDOW_SHOWN
     );
 
@@ -104,12 +114,10 @@ int main(int argc, char* argv[]) {
     if (!renderer) {
         printf("Renderer could not be created! SDL_Error: %s\n", SDL_GetError());
         return 1;
-    }
-
-    // Bucle principal del juego
+    }    // Bucle principal del juego
     SDL_Event event;
     Uint32 last_update = 0;
-    const int UPDATE_INTERVAL = 100; // Actualizar cada 100ms
+    const Uint32 UPDATE_INTERVAL = 100; // Actualizar cada 100ms
 
     while (running) {
         // Manejar eventos
@@ -133,11 +141,11 @@ int main(int argc, char* argv[]) {
             else if (event.type == SDL_MOUSEBUTTONDOWN) {
                 int mouse_x, mouse_y;
                 SDL_GetMouseState(&mouse_x, &mouse_y);
-                int grid_x = mouse_x / CELL_SIZE;
-                int grid_y = mouse_y / CELL_SIZE;
+                int grid_col = mouse_x / CELL_SIZE;
+                int grid_row = mouse_y / CELL_SIZE;
                 
-                if (grid_x >= 0 && grid_x < GRID_WIDTH && grid_y >= 0 && grid_y < GRID_HEIGHT) {
-                    grid[grid_x][grid_y] = !grid[grid_x][grid_y];
+                if (grid_row >= 0 && grid_row < GRID_ROWS && grid_col >= 0 && grid_col < GRID_COLS) {
+                    grid[grid_row][grid_col] = !grid[grid_row][grid_col];
                 }
             }
         }
@@ -155,12 +163,12 @@ int main(int argc, char* argv[]) {
 
         // Dibujar grilla
         SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
-        for (int x = 0; x < GRID_WIDTH; x++) {
-            for (int y = 0; y < GRID_HEIGHT; y++) {
-                if (grid[x][y]) {
+        for (int row = 0; row < GRID_ROWS; row++) {
+            for (int col = 0; col < GRID_COLS; col++) {
+                if (grid[row][col]) {
                     SDL_Rect cell = {
-                        x * CELL_SIZE,
-                        y * CELL_SIZE,
+                        col * CELL_SIZE,
+                        row * CELL_SIZE,
                         CELL_SIZE - 1,
                         CELL_SIZE - 1
                     };
@@ -188,4 +196,4 @@ int main(int argc, char* argv[]) {
     SDL_Quit();
 
     return 0;
-} 
+}
