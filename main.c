@@ -169,8 +169,8 @@ int main(int argc, char* argv[]) {
                     SDL_Rect cell = {
                         col * CELL_SIZE,
                         row * CELL_SIZE,
-                        CELL_SIZE - 1,
-                        CELL_SIZE - 1
+                        CELL_SIZE-1 ,
+                        CELL_SIZE-1 
                     };
                     SDL_RenderFillRect(renderer, &cell);
                 }
