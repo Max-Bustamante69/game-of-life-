@@ -1,7 +1,6 @@
 #include <SDL2/SDL.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdbool.h>
 
 #undef main
 
@@ -17,11 +16,11 @@
 #define GRID_ROWS (WINDOW_HEIGHT / CELL_SIZE)
 #define GRID_COLS (WINDOW_WIDTH / CELL_SIZE)
 
-// Estado de la grilla
-bool grid[GRID_ROWS][GRID_COLS] = {0};
-bool next_grid[GRID_ROWS][GRID_COLS] = {0};
-bool running = true;
-bool simulation_running = false;
+// Estado de la grilla usando bits
+unsigned char grid[GRID_ROWS][GRID_COLS] = {0};
+unsigned char next_grid[GRID_ROWS][GRID_COLS] = {0};
+unsigned char running = 1;
+unsigned char simulation_running = 0;
 
 // Función para contar vecinos vivos
 int count_neighbors(int x, int y) {
@@ -30,11 +29,11 @@ int count_neighbors(int x, int y) {
         for (int j = -1; j <= 1; j++) {
             if (i == 0 && j == 0) continue;
             
-            //Se añade el modulo para que la grilla sea circular y se cree un efecto de mundo infinito
             int nx = (x + i + GRID_ROWS) % GRID_ROWS;
             int ny = (y + j + GRID_COLS) % GRID_COLS;
             
-            if (grid[nx][ny]) count++;
+            // Usar operación AND con 1 para verificar si el bit está activo
+            if (grid[nx][ny] & 1) count++;
         }
     }
     return count;
@@ -45,20 +44,18 @@ void update_grid() {
     for (int x = 0; x < GRID_ROWS; x++) {
         for (int y = 0; y < GRID_COLS; y++) {
             int neighbors = count_neighbors(x, y);
-            bool cell = grid[x][y];
+            // Usar operación AND con 1 para obtener el estado actual
+            unsigned char cell = grid[x][y] & 1;
             
-            // Aplicar las reglas de Conway
-            // Si la celda está viva y tiene menos de 2 o más de 3 vecinos, muere
+            // Aplicar las reglas de Conway usando operaciones de bits
             if (cell && (neighbors < 2 || neighbors > 3)) {
-                next_grid[x][y] = false;
+                next_grid[x][y] = 0; // Célula muere
             } 
-            // Si la celda está muerta y tiene exactamente 3 vecinos, se convierte en viva
             else if (!cell && neighbors == 3) {
-                next_grid[x][y] = true;
+                next_grid[x][y] = 1; // Célula nace
             } 
-            // Si la celda está viva, se mantiene viva
             else {
-                next_grid[x][y] = cell;
+                next_grid[x][y] = cell; // Mantiene su estado
             }
         }
     }
@@ -75,7 +72,7 @@ void update_grid() {
 void clear_grid() {
     for (int x = 0; x < GRID_ROWS; x++) {
         for (int y = 0; y < GRID_COLS; y++) {
-            grid[x][y] = false;
+            grid[x][y] = 0;
         }
     }
 }
@@ -123,7 +120,7 @@ int main(int argc, char* argv[]) {
         // Manejar eventos
         while (SDL_PollEvent(&event)) {
             if (event.type == SDL_QUIT) {
-                running = false;
+                running = 0;
             }
             else if (event.type == SDL_KEYDOWN) {
                 switch (event.key.keysym.sym) {
@@ -134,7 +131,7 @@ int main(int argc, char* argv[]) {
                         clear_grid();
                         break;
                     case SDLK_ESCAPE:
-                        running = false;
+                        running = 0;
                         break;
                 }
             }
@@ -145,7 +142,8 @@ int main(int argc, char* argv[]) {
                 int grid_row = mouse_y / CELL_SIZE;
                 
                 if (grid_row >= 0 && grid_row < GRID_ROWS && grid_col >= 0 && grid_col < GRID_COLS) {
-                    grid[grid_row][grid_col] = !grid[grid_row][grid_col];
+                    // Usar operación XOR con 1 para alternar el estado del bit
+                    grid[grid_row][grid_col] ^= 1;
                 }
             }
         }
@@ -165,12 +163,13 @@ int main(int argc, char* argv[]) {
         SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
         for (int row = 0; row < GRID_ROWS; row++) {
             for (int col = 0; col < GRID_COLS; col++) {
-                if (grid[row][col]) {
+                // Usar operación AND con 1 para verificar si el bit está activo
+                if (grid[row][col] & 1) {
                     SDL_Rect cell = {
                         col * CELL_SIZE,
                         row * CELL_SIZE,
-                        CELL_SIZE-1 ,
-                        CELL_SIZE-1 
+                        CELL_SIZE-1,
+                        CELL_SIZE-1
                     };
                     SDL_RenderFillRect(renderer, &cell);
                 }
