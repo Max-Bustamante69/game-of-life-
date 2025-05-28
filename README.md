@@ -137,7 +137,7 @@ El proyecto está organizado de la siguiente manera:
 Después de compilar, ejecuta el programa:
 
 ```bash
-./game_of_life
+./game.exe
 ```
 
 
